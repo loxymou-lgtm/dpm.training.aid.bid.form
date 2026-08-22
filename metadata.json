@@ -1,0 +1,6 @@
+{
+  "name": "DPM Training Aid Bid Form Automation",
+  "description": "Interactive automation system for Papua New Guinea National Public Service Department of Personnel Management (DPM) Donor Funded Training Aid Bid Forms with AI drafting, verification, signature pads, structured jsPDF export, and official print formatting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
