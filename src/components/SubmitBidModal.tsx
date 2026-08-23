@@ -154,19 +154,19 @@ export const SubmitBidModal: React.FC<SubmitBidModalProps> = ({
                   <div className="rounded-xl border border-emerald-200 bg-white p-3">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Lodged For</span>
                     <p className="text-xs font-bold text-slate-800 truncate">
-                      {submissionResult.formData.familyName}, {submissionResult.formData.otherNames}
+                      {(submissionResult.formData?.familyName || "Applicant")}{submissionResult.formData?.otherNames ? `, ${submissionResult.formData.otherNames}` : ""}
                     </p>
                   </div>
                   <div className="rounded-xl border border-emerald-200 bg-white p-3">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Organisation</span>
                     <p className="text-xs font-bold text-slate-800 truncate">
-                      {submissionResult.formData.organisation}
+                      {submissionResult.formData?.organisation || "N/A"}
                     </p>
                   </div>
                   <div className="rounded-xl border border-emerald-200 bg-white p-3 col-span-2 sm:col-span-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">AI Readiness</span>
                     <p className="text-xs font-extrabold text-emerald-700">
-                      {submissionResult.aiAudit.readiness_score}/100 Score
+                      {(submissionResult.aiAudit?.readiness_score ?? 0)}/100 Score
                     </p>
                   </div>
                 </div>

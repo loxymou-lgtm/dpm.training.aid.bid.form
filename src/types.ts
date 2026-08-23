@@ -227,7 +227,7 @@ export interface DPMSubmissionRecord {
   timestamp: string;
   status: SubmissionStatus;
   formData: DPMBidFormData;
-  aiAudit: AIReviewResult;
+  aiAudit?: AIReviewResult;
   pdfBase64?: string;
   emailDelivery: EmailDeliveryInfo;
   adminNotes?: string;

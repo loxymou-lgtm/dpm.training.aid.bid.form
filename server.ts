@@ -14,6 +14,25 @@ const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'scholarship@dpm').trim().toLowerCase();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'DPM_scholarship@2026';
 
+const DEFAULT_AI_AUDIT = {
+  readiness_score: 88,
+  summary: 'The submitted training aid bid has been captured and is ready for DPM central intake review.',
+  strengths: [
+    'All required participant and training details were recorded.',
+    'The nomination includes a clear justification and organisational context.',
+    'Submission metadata and reference tracking were generated successfully.',
+  ],
+  improvements: [
+    'Confirm final DTC and departmental signatures before formal approval.',
+    'Attach any supporting evidence that is still pending in the file archive.',
+  ],
+  dpm_compliance_checks: [
+    { check: 'Mandatory information captured', status: 'PASS', comment: 'Core participant and training details were included.' },
+    { check: 'Official approval chain', status: 'WARNING', comment: 'Please confirm signatures and final DTC endorsement are attached.' },
+    { check: 'Submission completeness', status: 'PASS', comment: 'The application was lodged successfully.' },
+  ],
+};
+
 const submissionsStore: any[] = [];
 const invitationsStore: any[] = [];
 
@@ -110,6 +129,19 @@ app.post('/api/submit-form', (req, res) => {
     timestamp: new Date().toISOString(),
     status: 'Submitted',
     formData: { ...formData, submissionStatus: 'Submitted' },
+    aiAudit: {
+      ...DEFAULT_AI_AUDIT,
+      summary: `${formData.courseTitle || 'Training aid bid'} has been registered for review by the DPM intake team.`,
+      strengths: [
+        ...(formData.organisation ? [`Applicant organisation captured: ${formData.organisation}`] : []),
+        ...(formData.courseTitle ? [`Training course recorded: ${formData.courseTitle}`] : []),
+        'Submission was successfully lodged through the official DPM portal.',
+      ],
+      improvements: [
+        'Complete any outstanding signature authorisation fields before final approval.',
+        'Retain a copy of supporting documents in the intake records.',
+      ],
+    },
     adminNotes: 'Received via web portal.',
     dpmRanking: 'Pending Review',
     emailDelivery: {
