@@ -19,10 +19,13 @@ const invitationsStore: any[] = [];
 
 app.use(express.json({ limit: '20mb' }));
 
-app.use(express.static(ROOT_DIR));
-if (process.env.NODE_ENV === 'production') {
+const hasDistBuild = fs.existsSync(DIST_DIR) && fs.existsSync(path.join(DIST_DIR, 'index.html'));
+const serveIndexFile = () => (hasDistBuild ? path.join(DIST_DIR, 'index.html') : path.join(ROOT_DIR, 'index.html'));
+
+if (hasDistBuild) {
   app.use(express.static(DIST_DIR));
 }
+app.use(express.static(ROOT_DIR));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -180,23 +183,15 @@ app.post('/api/invitations', (req, res) => {
 });
 
 app.get('/admin', (_req, res) => {
-  const indexPath = path.join(DIST_DIR, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  }
-  return res.sendFile(path.join(ROOT_DIR, 'index.html'));
+  return res.sendFile(serveIndexFile());
 });
 
 app.get(['/', '/login', '/dashboard'], (_req, res) => {
-  const indexPath = path.join(DIST_DIR, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  }
-  return res.sendFile(path.join(ROOT_DIR, 'index.html'));
+  return res.sendFile(serveIndexFile());
 });
 
 app.use((_req, res) => {
-  const indexPath = path.join(DIST_DIR, 'index.html');
+  const indexPath = serveIndexFile();
   if (fs.existsSync(indexPath)) {
     return res.sendFile(indexPath);
   }
