@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import emblemUrl from "../../image/png-national-emblem.png?url";
 // Compatibility: jspdf-autotable may export as default or as module.exports; normalize to a callable function
 const autoTableCompat: any = (autoTable && (autoTable as any).default) || autoTable;
 import { DPMBidFormData } from "../types";
@@ -9,8 +10,8 @@ let _emblemDataUriCache: string | null = null;
 async function fetchImageUrlAsDataUri(url: string): Promise<string> {
   if (_emblemDataUriCache) return _emblemDataUriCache;
   try {
-    let fetchUrl = url;
-    // Determine a sensible default URL if none provided: prefer a server-served /image path (we expose image/ folder statically)
+    let fetchUrl = url || emblemUrl;
+    // Prefer the bundled asset URL so the logo works correctly in production builds and Render deployments.
     if (!fetchUrl) {
       if (typeof window === 'undefined') {
         const base = process.env.TEST_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;

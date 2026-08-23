@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import emblemUrl from "../../image/png-national-emblem.png?url";
 import {
   FileText,
   Printer,
@@ -84,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
       >
         <div className="flex items-center gap-4.5 w-full md:w-auto">
           <img
-            src="/image/png-national-emblem.png"
+            src={emblemUrl}
             alt="PNG National Emblem"
             className="h-12 w-auto object-contain shrink-0 bg-transparent"
             style={{ display: "block" }}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import nationalEmblemUrl from "../image/png-national-emblem.png?url";
 import {
   Sparkles,
   Printer,
@@ -603,7 +604,7 @@ export default function App() {
           className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center"
         >
           <img
-            src="/image/png-national-emblem.png"
+            src={nationalEmblemUrl}
             alt=""
             className="select-none object-contain opacity-[0.22]"
             style={{
@@ -626,7 +627,7 @@ export default function App() {
           >
             <div className="mb-6 flex items-center justify-center">
               <img
-                src="/image/png-national-emblem.png"
+                src={nationalEmblemUrl}
                 alt="PNG National Emblem"
                 className="h-16 w-16 object-contain bg-transparent opacity-100"
               />
