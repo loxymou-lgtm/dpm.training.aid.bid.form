@@ -50,7 +50,7 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
   onBackToWizard,
   onOpenDocumentViewForData,
 }) => {
-  const [mainTab, setMainTab] = useState<"registry" | "links" | "analytics" | "mailbox">("registry");
+  const [mainTab, setMainTab] = useState<"registry" | "links" | "analytics" | "mailbox">("links");
   const [submissions, setSubmissions] = useState<DPMSubmissionRecord[]>([]);
   const [invitations, setInvitations] = useState<ParticipantInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1371,8 +1371,12 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
       {/* Share Participant Link Modal */}
       <ShareParticipantLinkModal
         isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          fetchInvitations();
+        }}
         onInvitationCreated={(newInv) => {
+          setMainTab("links");
           setInvitations((prev) => [newInv, ...prev]);
         }}
       />

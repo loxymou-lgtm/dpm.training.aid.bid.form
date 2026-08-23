@@ -303,14 +303,26 @@ export default function App() {
       const qNominee = urlParams.get("nominee");
       const qEmail = urlParams.get("email");
       const qCourse = urlParams.get("course");
+      const qProvider = urlParams.get("provider");
+      const qCountry = urlParams.get("country");
+      const qStart = urlParams.get("start");
+      const qEnd = urlParams.get("end");
+      const qDelivery = urlParams.get("deliveryMode") || urlParams.get("mode");
+      const qTrainingType = urlParams.get("trainingType");
 
-      if (qOrg || qDonor || qLevel || qNominee || qEmail || qCourse) {
+      if (qOrg || qDonor || qLevel || qNominee || qEmail || qCourse || qProvider || qCountry || qStart || qEnd || qDelivery || qTrainingType) {
         setFormData((prev) => ({
           ...initialEmptyBidForm,
           ...(qOrg && { organisation: qOrg }),
           ...(qDonor && { aidDonor: qDonor }),
           ...(qLevel && { proposedStudyLevel: qLevel }),
           ...(qCourse && { courseTitle: qCourse }),
+          ...(qProvider && { trainingProvider: qProvider }),
+          ...(qCountry && { countryLocation: qCountry }),
+          ...(qStart && { trainingStartDate: qStart }),
+          ...(qEnd && { trainingEndDate: qEnd }),
+          ...(qDelivery && { modeOfDelivery: qDelivery as any }),
+          ...(qTrainingType && { trainingCategory: qTrainingType as any }),
           ...(qEmail && { email: qEmail }),
           ...(qNominee && {
             familyName: qNominee.split(" ").pop() || "",
@@ -337,6 +349,7 @@ export default function App() {
               });
 
               // Initialize with a clean form populated with invitation presets
+              const presetOverrides = inv.formDataOverride || {};
               setFormData({
                 ...initialEmptyBidForm,
                 invitationToken: inv.token,
@@ -350,6 +363,7 @@ export default function App() {
                   familyName: inv.targetNomineeName.split(" ").pop() || "",
                   otherNames: inv.targetNomineeName.split(" ").slice(0, -1).join(" ") || "",
                 }),
+                ...presetOverrides,
               });
 
               showToast(`Welcome! Official Nomination Form loaded for ${inv.targetDepartment}`);

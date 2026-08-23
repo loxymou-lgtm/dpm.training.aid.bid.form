@@ -41,7 +41,13 @@ export const ShareParticipantLinkModal: React.FC<ShareParticipantLinkModalProps>
   const [sector, setSector] = useState(currentFormData?.organisationSector || "Economic & Public Finance Sector");
   const [aidDonor, setAidDonor] = useState(currentFormData?.aidDonor || "Department of Foreign Affairs & Trade (DFAT) - Australia Awards");
   const [studyLevel, setStudyLevel] = useState(currentFormData?.proposedStudyLevel || "Masters Degree (Postgraduate)");
-  
+  const [trainingProvider, setTrainingProvider] = useState(currentFormData?.trainingProvider || "Australian National University");
+  const [countryLocation, setCountryLocation] = useState(currentFormData?.countryLocation || "Canberra, Australia");
+  const [trainingStartDate, setTrainingStartDate] = useState(currentFormData?.trainingStartDate || "");
+  const [trainingEndDate, setTrainingEndDate] = useState(currentFormData?.trainingEndDate || "");
+  const [modeOfDelivery, setModeOfDelivery] = useState(currentFormData?.modeOfDelivery || "Face-to-face");
+  const [trainingCategory, setTrainingCategory] = useState(currentFormData?.trainingCategory || "Professional Development");
+   
   // Nominee personalized preset
   const [nomineeName, setNomineeName] = useState(
     currentFormData?.familyName ? `${currentFormData.otherNames} ${currentFormData.familyName}`.trim() : ""
@@ -76,6 +82,12 @@ export const ShareParticipantLinkModal: React.FC<ShareParticipantLinkModalProps>
     if (nomineeName) params.set("nominee", nomineeName);
     if (nomineeEmail) params.set("email", nomineeEmail);
     if (courseTitle) params.set("course", courseTitle);
+    if (trainingProvider) params.set("provider", trainingProvider);
+    if (countryLocation) params.set("country", countryLocation);
+    if (trainingStartDate) params.set("start", trainingStartDate);
+    if (trainingEndDate) params.set("end", trainingEndDate);
+    if (modeOfDelivery) params.set("deliveryMode", modeOfDelivery);
+    if (trainingCategory) params.set("trainingType", trainingCategory);
     return `${origin}?${params.toString()}`;
   };
 
@@ -100,6 +112,12 @@ export const ShareParticipantLinkModal: React.FC<ShareParticipantLinkModalProps>
           aidDonor,
           proposedStudyLevel: studyLevel,
           courseTitle,
+          trainingProvider,
+          countryLocation,
+          trainingStartDate,
+          trainingEndDate,
+          modeOfDelivery,
+          trainingCategory,
           familyName: nomineeName ? nomineeName.split(" ").slice(-1)[0].toUpperCase() : "",
           otherNames: nomineeName ? nomineeName.split(" ").slice(0, -1).join(" ") : "",
           email: nomineeEmail,

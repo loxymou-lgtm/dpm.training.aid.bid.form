@@ -140,23 +140,39 @@ app.get('/api/invitations/:token', (req, res) => {
 
 app.post('/api/invitations', (req, res) => {
   const token = `PNG-DPM-${Date.now().toString().slice(-6)}`;
+  const formDataOverride = req.body?.formDataOverride || {};
   const invitation = {
     id: `inv-${Date.now()}`,
     token,
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 45).toISOString(),
-    targetDepartment: req.body?.targetDepartment || 'Open / All Public Service Agencies',
+    targetDepartment: req.body?.targetDepartment || formDataOverride.organisation || 'Open / All Public Service Agencies',
     targetNomineeName: req.body?.targetNomineeName || '',
-    targetNomineeEmail: req.body?.targetNomineeEmail || '',
-    targetDonor: req.body?.targetDonor || '',
-    targetCourseTitle: req.body?.targetCourseTitle || '',
-    studyLevel: req.body?.studyLevel || '',
-    sectorCategory: req.body?.sectorCategory || '',
+    targetNomineeEmail: req.body?.targetNomineeEmail || formDataOverride.email || '',
+    targetDonor: req.body?.targetDonor || formDataOverride.aidDonor || '',
+    targetCourseTitle: req.body?.targetCourseTitle || formDataOverride.courseTitle || '',
+    studyLevel: req.body?.studyLevel || formDataOverride.proposedStudyLevel || '',
+    sectorCategory: req.body?.sectorCategory || formDataOverride.organisationSector || '',
     notes: req.body?.notes || '',
     status: 'Active',
     accessCount: 0,
     shareableUrl: `${req.protocol}://${req.get('host') || 'localhost:3000'}?invite=${token}`,
-    formDataOverride: {},
+    formDataOverride: {
+      organisation: formDataOverride.organisation || req.body?.targetDepartment || '',
+      organisationSector: formDataOverride.organisationSector || req.body?.sectorCategory || '',
+      aidDonor: formDataOverride.aidDonor || req.body?.targetDonor || '',
+      proposedStudyLevel: formDataOverride.proposedStudyLevel || req.body?.studyLevel || '',
+      courseTitle: formDataOverride.courseTitle || req.body?.targetCourseTitle || '',
+      trainingProvider: formDataOverride.trainingProvider || '',
+      countryLocation: formDataOverride.countryLocation || '',
+      trainingStartDate: formDataOverride.trainingStartDate || '',
+      trainingEndDate: formDataOverride.trainingEndDate || '',
+      modeOfDelivery: formDataOverride.modeOfDelivery || '',
+      trainingCategory: formDataOverride.trainingCategory || '',
+      familyName: formDataOverride.familyName || '',
+      otherNames: formDataOverride.otherNames || '',
+      email: formDataOverride.email || req.body?.targetNomineeEmail || '',
+    },
   };
 
   invitationsStore.unshift(invitation);
