@@ -12,3 +12,4 @@ services:
         value: scholarship@dpm
       - key: ADMIN_PASSWORD
         value: DPM_scholarship@2026
+

@@ -61,7 +61,6 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
   
   // Selected Submission Modal
   const [selectedSubmission, setSelectedSubmission] = useState<DPMSubmissionRecord | null>(null);
-  const [submissionModalWasClosedByUser, setSubmissionModalWasClosedByUser] = useState(false);
   const [modalTab, setModalTab] = useState<"summary" | "ai_audit" | "email_log" | "admin_action">("summary");
   
   // Status update state
@@ -117,28 +116,34 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
     fetchInvitations();
   }, []);
 
+  const handleCloseSubmissionModal = () => {
+    setSelectedSubmission(null);
+  };
+
+  // Keep selectedSubmission in sync with submissions list if open, or close if removed
   useEffect(() => {
-    if (!submissions.length) {
-      setSelectedSubmission(null);
-      setSubmissionModalWasClosedByUser(false);
-      return;
-    }
-
-    if (!selectedSubmission) {
-      if (!submissionModalWasClosedByUser) {
-        setSelectedSubmission(submissions[0]);
+    if (selectedSubmission) {
+      const stillExists = submissions.find((s) => s.id === selectedSubmission.id);
+      if (stillExists) {
+        setSelectedSubmission(stillExists);
+      } else {
+        setSelectedSubmission(null);
       }
-      return;
     }
+  }, [submissions]);
 
-    const stillExists = submissions.some((submission) => submission.id === selectedSubmission.id);
-    if (!stillExists) {
-      setSelectedSubmission(submissions[0]);
-    }
-  }, [submissions, selectedSubmission, submissionModalWasClosedByUser]);
+  // Support closing modal with Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectedSubmission) {
+        handleCloseSubmissionModal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedSubmission]);
 
   const handleSelectSubmission = (sub: DPMSubmissionRecord) => {
-    setSubmissionModalWasClosedByUser(false);
     setSelectedSubmission(sub);
     setNewStatus(sub.status);
     setAdminNotes(sub.adminNotes || "");
@@ -1109,8 +1114,16 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
 
       {/* INSPECTION MODAL */}
       {selectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto"
+          onClick={handleCloseSubmissionModal}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-red-900 via-red-950 to-slate-900 px-6 py-4 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1133,8 +1146,9 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedSubmission(null)}
+                onClick={handleCloseSubmissionModal}
                 className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition"
+                aria-label="Close modal"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1384,7 +1398,7 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <div className="bg-slate-100 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -1397,13 +1411,23 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
                 <FileText className="h-4 w-4" /> Open Full Document View
               </button>
 
-              <button
-                type="button"
-                onClick={() => generateDPMBidFormPDF(selectedSubmission.formData)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-sm"
-              >
-                <Download className="h-4 w-4" /> Download Official PDF
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCloseSubmissionModal}
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-200/80 text-slate-700 rounded-xl text-xs font-bold transition"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => generateDPMBidFormPDF(selectedSubmission.formData)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                >
+                  <Download className="h-4 w-4" /> Download Official PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
