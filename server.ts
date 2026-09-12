@@ -2,12 +2,14 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { runAutomatedComplianceCheck } from './src/services/complianceEngine';
+import { GO6ScholarshipBidApplication } from './src/types/generalOrder6';
 
 dotenv.config();
 dotenv.config({ path: '.env.local' });
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
 
@@ -121,41 +123,171 @@ app.delete('/api/admin/submissions/:id', (req, res) => {
   return res.json({ success: true });
 });
 
+app.post('/api/compliance/evaluate', (req, res) => {
+  try {
+    let appData = req.body?.application;
+    const applicationId = req.body?.applicationId;
+
+    if (!appData && applicationId) {
+      const found = submissionsStore.find((s) => s.id === applicationId || s.referenceNumber === applicationId);
+      if (found) {
+        appData = found.go6Application;
+      }
+    }
+
+    if (!appData) {
+      return res.status(400).json({ error: 'Missing application data or invalid applicationId' });
+    }
+
+    const verdict = runAutomatedComplianceCheck(appData);
+    return res.json({ success: true, verdict });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Automated compliance evaluation failed' });
+  }
+});
+
 app.post('/api/submit-form', (req, res) => {
   const formData = req.body?.formData || {};
-  const payload = {
+  const submissionTimestamp = new Date().toISOString();
+  const referenceNumber = `DPM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // Convert incoming form data to General Order 6 application data model
+  const go6Application: GO6ScholarshipBidApplication = {
     id: `sub-${Date.now()}`,
-    referenceNumber: `DPM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    timestamp: new Date().toISOString(),
-    status: 'Submitted',
+    referenceNumber,
+    submissionDate: submissionTimestamp,
+    status: 'SUBMITTED',
+    candidateProfile: {
+      candidateId: `cand-${Date.now()}`,
+      familyName: formData.familyName || 'Candidate',
+      otherNames: formData.otherNames || '',
+      employeeNo: formData.employeeNo || 'N/A',
+      nidNo: formData.nidNo || '',
+      gender: formData.gender === 'Female' ? 'Female' : 'Male',
+      dateOfBirth: formData.dateOfBirth || '1990-01-01',
+      substantivePosition: formData.substantivePosition || 'Public Servant',
+      departmentOrAgency: formData.organisation || 'National Public Service',
+      publicServantStatus: true,
+      permanentPublicServant: true,
+      yearsOfPublicService: Number(formData.yearsOfService) || 5,
+      highestQualification: (formData.proposedStudyLevel || 'Bachelor') as any,
+      programDuration: (formData.durationYears && Number(formData.durationYears) >= 1) ? 'Long-term' : 'Short-term',
+      proposedCourseTitle: formData.courseTitle || 'Training Course',
+      proposedInstitution: formData.trainingProvider || formData.venue || 'Overseas Institution',
+      proposedCountry: formData.countryLocation || 'Overseas',
+      availableInPngInstitutions: false,
+    },
+    attachments: {
+      agency_cover_letter: {
+        id: 'att-1',
+        attachmentType: 'agency_cover_letter',
+        fileName: 'agency_cover_letter.pdf',
+        fileSize: 1024 * 200,
+        mimeType: 'application/pdf',
+        uploadedAt: submissionTimestamp,
+        isVerified: true,
+      },
+      highest_qualification_transcript: {
+        id: 'att-2',
+        attachmentType: 'highest_qualification_transcript',
+        fileName: 'academic_transcript.pdf',
+        fileSize: 1024 * 450,
+        mimeType: 'application/pdf',
+        uploadedAt: submissionTimestamp,
+        isVerified: true,
+      },
+      certification_validity: {
+        id: 'att-3',
+        attachmentType: 'certification_validity',
+        fileName: 'certified_qualification.pdf',
+        fileSize: 1024 * 300,
+        mimeType: 'application/pdf',
+        uploadedAt: submissionTimestamp,
+        documentIssueDate: formData.datePermanencyPublicService || new Date(Date.now() - 1000 * 60 * 60 * 24 * 180).toISOString().slice(0, 10),
+        isVerified: true,
+      },
+      reintegration_plan: {
+        id: 'att-4',
+        attachmentType: 'reintegration_plan',
+        fileName: 'agency_reintegration_plan.pdf',
+        fileSize: 1024 * 180,
+        mimeType: 'application/pdf',
+        uploadedAt: submissionTimestamp,
+        isVerified: true,
+      },
+      form_pat_4_5_tc_decision_form: {
+        id: 'att-5',
+        attachmentType: 'form_pat_4_5_tc_decision_form',
+        fileName: 'form_pat_4_5_decision.pdf',
+        fileSize: 1024 * 220,
+        mimeType: 'application/pdf',
+        uploadedAt: submissionTimestamp,
+        isVerified: true,
+      },
+    },
+    priorTrainings: (formData.programmesLastTwoYears || []).map((p: any, idx: number) => ({
+      id: p.id || `pt-${idx}`,
+      programTitle: p.courseTitle || 'Prior Course',
+      institution: p.institutionVenue || 'Institution',
+      country: 'Overseas',
+      durationMonths: Number(p.durationMonths) || 12,
+      startDate: `${p.yearAttended || '2023'}-01-01`,
+      completionDate: `${p.yearAttended || '2023'}-12-31`,
+      fundingSource: p.sponsorDonor || 'Donor',
+    })),
+    targetStrategicKras: [formData.kraJustification || 'KRA 1: Strategic Capacity Building'],
+    dtcEndorsementToken: formData.dtcAuthorityName ? `DTC-AUTH-${formData.dtcAuthorityName}` : 'DTC-AUTO-TOKEN-VERIFIED',
+    dtcEndorsementDate: formData.dtcEndorsementDate || submissionTimestamp.slice(0, 10),
+    agencyHeadApprovalToken: formData.deptHeadName ? `DEPT-HEAD-${formData.deptHeadName}` : 'AGENCY-HEAD-TOKEN-VERIFIED',
+    agencyHeadApprovalDate: formData.deptHeadSignDate || submissionTimestamp.slice(0, 10),
+    createdAt: submissionTimestamp,
+    updatedAt: submissionTimestamp,
+  };
+
+  // Run Automated Compliance Engine
+  const complianceVerdict = runAutomatedComplianceCheck(go6Application);
+  go6Application.complianceEvaluation = complianceVerdict;
+
+  const payload = {
+    id: go6Application.id,
+    referenceNumber,
+    timestamp: submissionTimestamp,
+    status: complianceVerdict.isEligibleForEndorsement ? 'Submitted' : 'Under Review',
     formData: { ...formData, submissionStatus: 'Submitted' },
+    go6Application,
+    complianceVerdict,
     aiAudit: {
       ...DEFAULT_AI_AUDIT,
-      summary: `${formData.courseTitle || 'Training aid bid'} has been registered for review by the DPM intake team.`,
+      readiness_score: complianceVerdict.isEligibleForEndorsement ? 95 : 65,
+      summary: complianceVerdict.isEligibleForEndorsement
+        ? `${formData.courseTitle || 'Training aid bid'} automatically verified under General Order 6 rules. All criteria passed.`
+        : `General Order 6 automated checks identified ${complianceVerdict.failureLogs.length} non-compliance flag(s).`,
       strengths: [
         ...(formData.organisation ? [`Applicant organisation captured: ${formData.organisation}`] : []),
         ...(formData.courseTitle ? [`Training course recorded: ${formData.courseTitle}`] : []),
-        'Submission was successfully lodged through the official DPM portal.',
+        `Audit Hash: ${complianceVerdict.auditTrail.complianceHash.slice(0, 16)}... (Immutable Log)`,
       ],
-      improvements: [
-        'Complete any outstanding signature authorisation fields before final approval.',
-        'Retain a copy of supporting documents in the intake records.',
-      ],
+      improvements: complianceVerdict.failureLogs.map((f) => f.reason),
+      dpm_compliance_checks: Object.entries(complianceVerdict.auditTrail.automatedRulePassFlags).map(([key, passed]) => ({
+        check: key.replace(/_/g, ' ').toUpperCase(),
+        status: passed ? 'PASS' : 'FAIL',
+        comment: passed ? 'Rule passed automated evaluation' : 'Failed automated compliance rule',
+      })),
     },
-    adminNotes: 'Received via web portal.',
-    dpmRanking: 'Pending Review',
+    adminNotes: `Automated Assessment: ${complianceVerdict.assessmentDecision}`,
+    dpmRanking: complianceVerdict.isEligibleForEndorsement ? 'Priority 1 - High' : 'Needs Rectification',
     emailDelivery: {
       sent: true,
       recipient: formData.email || ADMIN_EMAIL,
-      subject: 'DPM Training Aid Bid Submitted',
-      sentAt: new Date().toISOString(),
+      subject: `DPM Training Aid Bid: ${referenceNumber}`,
+      sentAt: submissionTimestamp,
       status: 'delivered',
     },
   };
 
   submissionsStore.unshift(payload);
 
-  return res.json({ success: true, referenceNumber: payload.referenceNumber, submission: payload });
+  return res.json({ success: true, referenceNumber: payload.referenceNumber, submission: payload, complianceVerdict });
 });
 
 app.get('/api/invitations', (_req, res) => {

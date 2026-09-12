@@ -558,6 +558,15 @@ export default function App() {
       submissionTimestamp: submission.timestamp,
     }));
     showToast(`Bid officially registered: ${submission.referenceNumber}`);
+
+    if (isParticipantMode) {
+      setTimeout(() => {
+        setIsSubmitModalOpen(false);
+        setFormData(initialEmptyBidForm);
+        setCurrentStep(1);
+        setViewMode("wizard");
+      }, 2200);
+    }
   };
 
   const handleAdminLogin = async () => {

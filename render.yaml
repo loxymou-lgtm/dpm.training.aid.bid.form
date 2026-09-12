@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: dpm-training-aid-bid-form
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: ADMIN_EMAIL
+        value: scholarship@dpm
+      - key: ADMIN_PASSWORD
+        value: DPM_scholarship@2026

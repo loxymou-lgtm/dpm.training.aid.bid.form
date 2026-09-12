@@ -99,7 +99,7 @@ export interface DPMBidFormData {
   targetedPositionUponCompletion: string;
 
   // 14. Details of Any Programme (> 9 months) in last 2 years
-  hasAttendedProgrammeLastTwoYears: "NO" | "YES";
+  hasAttendedProgrammeLastTwoYears: "NO" | "YES" | "";
   programmesLastTwoYears: PriorTrainingProgramme[];
   priorProgrammeDetailsNote: string;
 
@@ -116,7 +116,7 @@ export interface DPMBidFormData {
 
   // 17. Signature of Respective Departmental Head / Delegate
   deptHeadName: string;
-  deptHeadDesignation: "Agency Head" | "Delegate";
+  deptHeadDesignation: "Agency Head" | "Delegate" | "";
   deptHeadDelegationEvidenceNote: string;
   deptHeadSignatureDataUrl: string;
   deptHeadSignDate: string;

@@ -61,6 +61,7 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
   
   // Selected Submission Modal
   const [selectedSubmission, setSelectedSubmission] = useState<DPMSubmissionRecord | null>(null);
+  const [submissionModalWasClosedByUser, setSubmissionModalWasClosedByUser] = useState(false);
   const [modalTab, setModalTab] = useState<"summary" | "ai_audit" | "email_log" | "admin_action">("summary");
   
   // Status update state
@@ -119,11 +120,14 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
   useEffect(() => {
     if (!submissions.length) {
       setSelectedSubmission(null);
+      setSubmissionModalWasClosedByUser(false);
       return;
     }
 
     if (!selectedSubmission) {
-      setSelectedSubmission(submissions[0]);
+      if (!submissionModalWasClosedByUser) {
+        setSelectedSubmission(submissions[0]);
+      }
       return;
     }
 
@@ -131,9 +135,10 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
     if (!stillExists) {
       setSelectedSubmission(submissions[0]);
     }
-  }, [submissions, selectedSubmission]);
+  }, [submissions, selectedSubmission, submissionModalWasClosedByUser]);
 
   const handleSelectSubmission = (sub: DPMSubmissionRecord) => {
+    setSubmissionModalWasClosedByUser(false);
     setSelectedSubmission(sub);
     setNewStatus(sub.status);
     setAdminNotes(sub.adminNotes || "");
@@ -141,6 +146,26 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
     setResendEmailAddress(sub.emailDelivery?.recipient || "admin@dpm.gov.pg");
     setModalTab("summary");
     setUpdateSuccessMsg("");
+  };
+
+  const getValidationStatus = (submission: DPMSubmissionRecord) => {
+    const checks = submission.aiAudit?.dpm_compliance_checks || [];
+
+    if (!checks.length) {
+      return { label: "Auto-check", tone: "neutral" as const };
+    }
+
+    const hasFail = checks.some((check) => check.status === "FAIL");
+    const hasWarning = checks.some((check) => check.status === "WARNING");
+
+    if (hasFail) {
+      return { label: "Needs attention", tone: "danger" as const };
+    }
+    if (hasWarning) {
+      return { label: "Validated with warning", tone: "warning" as const };
+    }
+
+    return { label: "Validated", tone: "success" as const };
   };
 
   const handleSaveStatusUpdate = async () => {
@@ -160,12 +185,16 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
       });
       if (response.ok) {
         const data = await response.json();
-        setSelectedSubmission(data.submission);
+        const updatedSubmission = data.submission;
+        setSelectedSubmission(updatedSubmission);
         setSubmissions((prev) =>
-          prev.map((s) => (s.id === data.submission.id ? data.submission : s))
+          prev.map((s) => (s.id === updatedSubmission.id ? updatedSubmission : s))
         );
         setUpdateSuccessMsg("Submission status and administrative notes updated successfully!");
-        setTimeout(() => setUpdateSuccessMsg(""), 3000);
+        setModalTab("summary");
+        setSelectedSubmission(null);
+        setMainTab("registry");
+        setTimeout(() => setUpdateSuccessMsg(""), 2200);
       }
     } catch (err) {
       console.error("Failed to update status:", err);
@@ -596,6 +625,18 @@ export const AdminSubmissionsDashboard: React.FC<AdminSubmissionsDashboardProps>
                             </span>
                             <div className="text-[10px] text-slate-500 mt-0.5 font-semibold">
                               {sub.dpmRanking || "Pending Priority"}
+                            </div>
+                            <div className={`mt-1 inline-flex w-fit items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold ${
+                              getValidationStatus(sub).tone === "success"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : getValidationStatus(sub).tone === "warning"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : getValidationStatus(sub).tone === "danger"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-slate-100 text-slate-700 border-slate-200"
+                            }`}>
+                              <CheckCircle2 className="h-2.5 w-2.5" />
+                              {getValidationStatus(sub).label}
                             </div>
                           </td>
 
